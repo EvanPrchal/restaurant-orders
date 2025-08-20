@@ -8,6 +8,12 @@ class CreateMenuItemRequest(BaseModel):
 class CreateCustomerRequest(BaseModel):
     name: str
 
+class CreateOrderRequest(BaseModel):
+    name: str
+    substitutions: str
+    price: str
+    orders: str
+
 class UpdateMenuItemRequest(BaseModel):
     name: str
     price: str
@@ -15,3 +21,6 @@ class UpdateMenuItemRequest(BaseModel):
 
 class UpdateCustomerRequest(BaseModel):
     name: str
+
+class UpdateOrderRequest(BaseModel):
+    status: str

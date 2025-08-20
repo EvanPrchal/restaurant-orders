@@ -4,7 +4,7 @@ from sqlmodel import Session, select
 from database import get_db
 
 from models import MenuItem, Customer, OrderItem, Order
-from schemas import CreateMenuItemRequest, CreateCustomerRequest, UpdateMenuItemRequest, UpdateCustomerRequest
+from schemas import CreateMenuItemRequest, CreateCustomerRequest, CreateOrderRequest , UpdateMenuItemRequest, UpdateCustomerRequest, UpdateOrderRequest
 
 
 app = FastAPI()
@@ -53,6 +53,14 @@ async def create_customer(create_customer_request: CreateCustomerRequest, db: Se
     db.refresh(customer)
     return customer.id
 
+@app.post("/orders", status_code=status.HTTP_201_CREATED)
+async def create_order_with_items(create_order_request: CreateOrderRequest, db: Session = Depends(get_db)) -> int:
+    order: Order = Order(**create_order_request.model_dump()) 
+    db.add(order)
+    db.commit()
+    db.refresh(order)
+    return order.id
+
 ### PATCH ###
 
 @app.patch("/menu/{menu_number}", status_code=status.HTTP_204_NO_CONTENT)
@@ -74,6 +82,16 @@ async def update_customer(customer_id: int, update_customer_request: UpdateCusto
         setattr(customer, k, v)
     db.commit()
     return None
+
+@app.patch("/orders/{id}/status")
+async def update_order_status(order_id: int, update_order_request: UpdateOrderRequest, db: Session = Depends(get_db)) -> None:
+    order: Order | None = db.get(Order, order_id)
+    if order is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Order with id: {order_id} does not exist.")
+    for k, v in update_order_request.model_dump(exclude_unset=True).items():
+        setattr(order, k, v)
+        db.commit()
+        return None
 
 ### DELETE ###
 
