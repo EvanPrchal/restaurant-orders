@@ -1,8 +1,8 @@
-"""pls
+"""finished db????
 
-Revision ID: fcf875d8454a
-Revises: 29b9c09482a5
-Create Date: 2025-08-20 11:40:07.050143
+Revision ID: 352b89580b89
+Revises: a344372c2ab9
+Create Date: 2025-08-21 08:42:13.211329
 
 """
 from typing import Sequence
@@ -13,8 +13,8 @@ import sqlmodel
 
 
 # revision identifiers, used by Alembic.
-revision: str = 'fcf875d8454a'
-down_revision: str | Sequence[str] | None = '29b9c09482a5'
+revision: str = '352b89580b89'
+down_revision: str | Sequence[str] | None = 'a344372c2ab9'
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

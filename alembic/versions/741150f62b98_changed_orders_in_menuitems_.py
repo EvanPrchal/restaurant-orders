@@ -1,8 +1,8 @@
-"""pls
+"""changed orders in menuitems backpopulates to menuitem
 
-Revision ID: 29b9c09482a5
-Revises: 8987f6e420a9
-Create Date: 2025-08-20 11:32:17.389855
+Revision ID: 741150f62b98
+Revises: 2eb36f4f5bc1
+Create Date: 2025-08-21 08:38:11.940184
 
 """
 from typing import Sequence
@@ -13,8 +13,8 @@ import sqlmodel
 
 
 # revision identifiers, used by Alembic.
-revision: str = '29b9c09482a5'
-down_revision: str | Sequence[str] | None = '8987f6e420a9'
+revision: str = '741150f62b98'
+down_revision: str | Sequence[str] | None = '2eb36f4f5bc1'
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

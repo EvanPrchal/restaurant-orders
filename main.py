@@ -4,7 +4,7 @@ from sqlmodel import Session, select
 from database import get_db
 
 from models import MenuItem, Customer, OrderItem, Order
-from schemas import CreateMenuItemRequest, CreateCustomerRequest, CreateOrderRequest , UpdateMenuItemRequest, UpdateCustomerRequest, UpdateOrderRequest
+from schemas import CreateMenuItemRequest, CreateCustomerRequest, CreateOrderRequest , UpdateMenuItemRequest, UpdateCustomerRequest, UpdateOrderRequest, GetOrderResponse
 
 
 app = FastAPI()
@@ -28,13 +28,37 @@ async def get_customers(db: Session = Depends(get_db)) -> list[Customer]:
     return db.exec(select(Customer)).all()
 
 @app.get("/orders")
-async def get_orders(db: Session = Depends(get_db)) -> list[Order]:
-    return db.exec(select(Order)).all()
-
+async def get_orders(db: Session = Depends(get_db)) -> list[GetOrderResponse]:
+    order_list: list[GetOrderResponse] = []
+    orders: list[Order] | None = db.exec(select(Order)).all()
+    for order in orders:
+        order_list.append(GetOrderResponse(id=order.id, customer_id = order.customer_id, status=order.status, items=order.items))
+    return order_list
+ 
 @app.get("/order_items")
 async def get_order_items(db: Session = Depends(get_db)) -> list[OrderItem]:
-    return db.exec(select(OrderItem)).all()
+    return len(db.exec(select(OrderItem)).all())
 
+
+## REPORTS ##
+@app.get("/revenue")
+async def get_revenue(db: Session = Depends(get_db)) -> list[GetOrderResponse]:
+   #not working as of now
+   return db.exec(select(GetOrderResponse)).all() 
+
+@app.get("/menu/bestsellers")
+async def get_bestsellers(db: Session = Depends(get_db)) -> list[OrderItem]:
+    #i know <select count(menu_number) amount_ordered FROM "orderitem" group by menu_number;> works for sql i just dont know how to do it in python </3
+    statement = (select(OrderItem)
+    )
+    db.exec(select(statement)).all
+
+
+@app.get("/orders/{customer_id}")
+async def get_number_of_customer_orders(customer_id: int, db: Session = Depends(get_db)) -> list[OrderItem]:
+    #not working as of now
+    return db.exec(select(Order).where(Customer.id==customer_id))
+        
 ### POST ###
 
 @app.post("/menu", status_code=status.HTTP_201_CREATED)
@@ -55,19 +79,27 @@ async def create_customer(create_customer_request: CreateCustomerRequest, db: Se
 
 @app.post("/orders", status_code=status.HTTP_201_CREATED)
 async def create_order_with_items(create_order_request: CreateOrderRequest, db: Session = Depends(get_db)) -> int:
-    order: Order = Order(**create_order_request.model_dump()) 
+    items_list = []
+    if db.get(Customer, create_order_request.customer_id) == None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Customer with id: {create_order_request.customer_id} not found")
+    for item in create_order_request.menuitems:
+       if db.get(MenuItem, item):
+           menu_item = db.get(MenuItem, item)
+           items_list.append(menu_item)
+    order: Order = Order(items=items_list, status="Placed", customer_id=create_order_request.customer_id)
     db.add(order)
     db.commit()
     db.refresh(order)
     return order.id
-
+    
+    
 ### PATCH ###
 
 @app.patch("/menu/{menu_number}", status_code=status.HTTP_204_NO_CONTENT)
 async def update_menu_item(menu_number: int, update_menu_item_request: UpdateMenuItemRequest, db: Session = Depends(get_db)) -> None:
     menu_item: MenuItem | None = db.get(MenuItem, menu_number)
     if menu_item is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Menu item number: {menu_number} does not exist.")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Menu item number: {menu_number} does not exist.")
     for k, v in update_menu_item_request.model_dump(exclude_unset=True).items():
         setattr(menu_item, k, v)
     db.commit()
@@ -77,7 +109,7 @@ async def update_menu_item(menu_number: int, update_menu_item_request: UpdateMen
 async def update_customer(customer_id: int, update_customer_request: UpdateCustomerRequest, db: Session = Depends(get_db)) -> None:
     customer: Customer | None = db.get(Customer, customer_id)
     if customer is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Customer with id: {customer_id} does not exist.")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Customer with id: {customer_id} does not exist.")
     for k, v in update_customer_request.model_dump(exclude_unset=True).items():
         setattr(customer, k, v)
     db.commit()
@@ -87,7 +119,7 @@ async def update_customer(customer_id: int, update_customer_request: UpdateCusto
 async def update_order_status(order_id: int, update_order_request: UpdateOrderRequest, db: Session = Depends(get_db)) -> None:
     order: Order | None = db.get(Order, order_id)
     if order is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Order with id: {order_id} does not exist.")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Order with id: {order_id} does not exist.")
     for k, v in update_order_request.model_dump(exclude_unset=True).items():
         setattr(order, k, v)
         db.commit()
@@ -99,7 +131,7 @@ async def update_order_status(order_id: int, update_order_request: UpdateOrderRe
 async def delete_menu_item(menu_number: int, db: Session = Depends(get_db)) -> None:
     menu_item: MenuItem | None = db.get(MenuItem, menu_number)
     if menu_item is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Menu item number: {menu_number} does not exist.")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Menu item number: {menu_number} does not exist.")
     db.delete(menu_item)
     db.commit()
     return None
@@ -108,7 +140,7 @@ async def delete_menu_item(menu_number: int, db: Session = Depends(get_db)) -> N
 async def delete_customer(customer_id: int, db: Session = Depends(get_db)) -> None:
     customer: Customer | None = db.get(Customer, customer_id)
     if customer is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Customer with id: {customer_id} does not exist.")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Customer with id: {customer_id} does not exist.")
     db.delete(customer)
     db.commit()
     return None

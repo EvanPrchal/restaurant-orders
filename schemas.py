@@ -1,4 +1,10 @@
 from pydantic import BaseModel
+from models import MenuItem
+class GetOrderResponse(BaseModel):
+    id: int
+    customer_id: int
+    status: str
+    items: list[MenuItem]
 
 class CreateMenuItemRequest(BaseModel):
     name: str
@@ -9,10 +15,8 @@ class CreateCustomerRequest(BaseModel):
     name: str
 
 class CreateOrderRequest(BaseModel):
-    name: str
-    substitutions: str
-    price: str
-    orders: str
+    customer_id: int
+    menuitems: list[int]
 
 class UpdateMenuItemRequest(BaseModel):
     name: str
