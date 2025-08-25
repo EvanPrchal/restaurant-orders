@@ -28,3 +28,7 @@ class UpdateCustomerRequest(BaseModel):
 
 class UpdateOrderRequest(BaseModel):
     status: str
+
+class BestsellerRequest(BaseModel):
+    menu_number: int
+    amount_ordered: int
