@@ -1,6 +1,6 @@
 from fastapi import FastAPI, HTTPException, status, Depends
 from sqlmodel import Session, select
-from sqlalchemy import func
+from sqlalchemy import func, desc
 from database import get_db
 
 from models import MenuItem, Customer, OrderItem, Order
@@ -49,7 +49,8 @@ async def get_revenue(db: Session = Depends(get_db)) -> list[GetOrderResponse]:
 @app.get("/menu/bestsellers")
 async def get_bestsellers(db: Session = Depends(get_db)) -> list[BestsellerRequest]:
     #i know <select count(menu_number) amount_ordered FROM "orderitem" group by menu_number;> works for sql i just dont know how to do it in python </3
-    return db.exec(select(func.count(MenuItem.menu_number).label("amount_ordered"), MenuItem.menu_number).select_from(OrderItem).join(MenuItem, OrderItem.menu_number == MenuItem.menu_number).group_by(MenuItem.menu_number)).all()
+    return db.exec(select(func.count(MenuItem.menu_number).label("amount_ordered"), MenuItem.menu_number).select_from(OrderItem).join(MenuItem, OrderItem.menu_number == MenuItem.menu_number).group_by(MenuItem.menu_number).order_by(desc("amount_ordered"))).all()
+
 
 
 @app.get("/orders/{customer_id}")
